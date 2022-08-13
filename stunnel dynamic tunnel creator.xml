@@ -1,0 +1,229 @@
+<codeTemplateLibrary version="4.0.1">
+  <id>e12e11cf-14a8-4171-bff4-5ae582125b2b</id>
+  <name>stunnel dynamic tunnel creator</name>
+  <revision>10</revision>
+  <lastModified>
+    <time>1660499660047</time>
+    <timezone>America/Chicago</timezone>
+  </lastModified>
+  <description></description>
+  <includeNewChannels>true</includeNewChannels>
+  <enabledChannelIds>
+  </enabledChannelIds>
+  <disabledChannelIds>
+  </disabledChannelIds>
+  <codeTemplates>
+    <codeTemplate version="4.0.1">
+      <id>ddd48bcc-787a-4e7b-b892-29da6d0d4333</id>
+      <name>stop_pid(id) // Linux kill</name>
+      <revision>3</revision>
+      <lastModified>
+        <time>1660426287607</time>
+        <timezone>America/Chicago</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>GLOBAL_PREPROCESSOR</contextType>
+          <contextType>GLOBAL_DEPLOY</contextType>
+          <contextType>GLOBAL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {Any} id - process id to kill
+	@return {Any} 
+*/
+function stop_pid(id) {
+    var result = executeRuntimeCommand(&apos;kill &apos; + id);
+    if (result.stderr != &apos;&apos;) {
+        logger.error(&apos;Errors: &apos; + result.stderr);
+        return false
+    } else {
+        return true
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.0.1">
+      <id>c826fab6-b58c-400c-a54a-5210c3b40e0d</id>
+      <name>stunnel_cleanup()   // Add to Global Undeploy Script</name>
+      <revision>8</revision>
+      <lastModified>
+        <time>1660501750943</time>
+        <timezone>America/Chicago</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>GLOBAL_UNDEPLOY</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Add this function to the Global Undeploy script 
+     This function hard kills stunnel and removes its dynmanically created directory
+
+	@return {Any} 
+*/
+function stunnel_cleanup() {
+    var it = ChannelUtil.getChannelIds().iterator();
+    while (it.hasNext()) {
+        var channelId = it.next();
+        var chName = ChannelUtil.getChannelName(channelId)
+        var chState = ChannelUtil.getConnectorState(chName, 0);
+        if (globalMap.containsKey(chName + &apos;_stunnel_listener_pid&apos;) &amp;&amp; chState == null) {
+            if (stop_pid($g(chName + &apos;_stunnel_listener_pid&apos;))) globalMap.remove(chName + &apos;_stunnel_listener_pid&apos;);
+            var delete_dir = java.io.File($g(chName + &apos;_stunnel_listener_dir&apos;))
+            org.apache.commons.io.FileUtils.deleteDirectory(delete_dir);
+            globalMap.remove(chName + &apos;_stunnel_listener_dir&apos;)
+        }
+        if (globalMap.containsKey(chName + &apos;_stunnel_sender_pid&apos;) &amp;&amp; chState == null) {
+            if (stop_pid($g(chName + &apos;_stunnel_sender_pid&apos;))) globalMap.remove(chName + &apos;_stunnel_sender_pid&apos;);
+            var delete_dir = java.io.File($g(chName + &apos;_stunnel_sender_dir&apos;))
+            org.apache.commons.io.FileUtils.deleteDirectory(delete_dir);
+            globalMap.remove(chName + &apos;_stunnel_sender_dir&apos;)
+            globalMap.remove(chName + &apos;_stunnel_sender_whereto&apos;)
+        }
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.0.1">
+      <id>4eda94b6-638e-4b32-8eb1-482353e7f72f</id>
+      <name>stunnel_listener_setup(os_listening_port, mirth_listening_port, private_key, server_cert)</name>
+      <revision>14</revision>
+      <lastModified>
+        <time>1660499906413</time>
+        <timezone>America/Chicago</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>CHANNEL_DEPLOY</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {Any} os_listening_port - 
+	@param {Any} mirth_listening_port - 
+	@param {Any} private_key - 
+	@param {Any} server_cert - 
+	@return {String} return description
+*/
+function stunnel_listener_setup(os_listening_port, mirth_listening_port, private_key, server_cert) {
+    var this_pem = private_key + &apos;\n&apos; + server_cert
+    var uuid = UUIDGenerator.getUUID()
+    globalMap.remove(channelName + &apos;_stunnel_listener_dir&apos;) // just in case 
+    globalMap.remove(channelName + &apos;_stunnel_listener_pid&apos;) // just in case
+    
+var stunnel_conf = &lt;&gt;
+engine = auto
+foreground = no
+pid = /tmp/{uuid}/pid	
+client = no
+[{uuid}]
+accept  = {os_listening_port}
+connect = {mirth_listening_port}
+cert = /tmp/{uuid}/stunnel.pem
+&lt;/&gt;.toString();
+
+//  Create this stunnel.pem
+    var FileToWrite = java.io.File(&apos;/tmp/&apos; + uuid + &apos;/stunnel.pem&apos;);
+    org.apache.commons.io.FileUtils.writeStringToFile(FileToWrite, this_pem, false);
+//  Create this stunnel.conf
+    var FileToWrite = java.io.File(&apos;/tmp/&apos; + uuid + &apos;/stunnel.conf&apos;);
+    org.apache.commons.io.FileUtils.writeStringToFile(FileToWrite, stunnel_conf, false);
+
+//  Start stunnel
+    var result = executeRuntimeCommand(&apos;stunnel /tmp/&apos; + uuid + &apos;/stunnel.conf&apos;);
+    if (result.stderr != &apos;&apos;) {
+        logger.error(&apos;Errors: &apos; + result.stderr);
+        var delete_dir = java.io.File(&apos;/tmp/&apos; + uuid)
+        org.apache.commons.io.FileUtils.deleteDirectory(delete_dir);
+        throw (&apos;stunnel listener setup failed&apos;)
+    } else {
+        $g(channelName + &apos;_stunnel_listener_pid&apos;, FileUtil.read(&apos;/tmp/&apos; + uuid + &apos;/pid&apos;))
+        $g(channelName + &apos;_stunnel_listener_dir&apos;, &apos;/tmp/&apos; + uuid)
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="4.0.1">
+      <id>b0b4bdda-1d8e-4531-b8ed-19b8e16943e4</id>
+      <name>stunnel_sender_setup(endpoint_listening_host_and_port, os_listening_port)</name>
+      <revision>14</revision>
+      <lastModified>
+        <time>1660501811055</time>
+        <timezone>America/Chicago</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>CHANNEL_DEPLOY</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Modify the description here. Modify the function name and parameters as needed. One function per
+	template is recommended; create a new code template for each new function.
+
+	@param {Any} endpoint_listening_host_and_port - google.com:443
+	@param {Any} os_listening_port - In Mirth you will send your reuqests to &lt;mirth IP&gt;:port 
+	@return {String} return description
+*/
+function stunnel_sender_setup(endpoint_listening_host_and_port, os_listening_port) {
+    var uuid = UUIDGenerator.getUUID()
+    globalMap.remove(channelName + &apos;_stunnel_sender_pid&apos;)
+    globalMap.remove(channelName + &apos;_stunnel_sender_dir&apos;)
+    globalMap.remove(channelName + &apos;_stunnel_sender_whereto&apos;)
+    
+var stunnel_conf = &lt;&gt;
+engine = auto
+foreground = no
+pid = /tmp/{uuid}/pid	
+client = yes
+[{uuid}]
+accept  = {os_listening_port}
+connect = {endpoint_listening_host_and_port}
+&lt;/&gt;.toString();
+
+//  Create this stunnel.conf
+    var FileToWrite = java.io.File(&apos;/tmp/&apos; + uuid + &apos;/stunnel.conf&apos;);
+    org.apache.commons.io.FileUtils.writeStringToFile(FileToWrite, stunnel_conf, false);
+
+//  Start stunnel
+    var result = executeRuntimeCommand(&apos;stunnel /tmp/&apos; + uuid + &apos;/stunnel.conf&apos;);
+    if (result.stderr != &apos;&apos;) {
+        logger.error(&apos;Errors: &apos; + result.stderr);
+        var delete_dir = java.io.File(&apos;/tmp/&apos; + uuid)
+        org.apache.commons.io.FileUtils.deleteDirectory(delete_dir);
+        throw (&apos;stunnel sender setup failed&apos;)
+    } else {
+        $g(channelName + &apos;_stunnel_sender_pid&apos;, FileUtil.read(&apos;/tmp/&apos; + uuid + &apos;/pid&apos;))
+        $g(channelName + &apos;_stunnel_sender_dir&apos;, &apos;/tmp/&apos; + uuid)
+        $g(channelName + &apos;_stunnel_sender_whereto&apos;, endpoint_listening_host_and_port)
+    }
+}</code>
+      </properties>
+    </codeTemplate>
+  </codeTemplates>
+</codeTemplateLibrary>
