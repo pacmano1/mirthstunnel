@@ -28,6 +28,11 @@ $gc('mirth_receiver_os_listening_port', '8043')   // Make sure this port is not 
 $gc('mirth_receiver_listening_port', '9043')    // Use this var on the source tab for port MUST be above port 1024 and not in use.  Var name is velocity syntax -> ${mirthListeningPort}
 stunnel_listener_setup($gc('mirth_receiver_os_listening_port'), $gc('mirth_receiver_listening_port'), $cfg('my_private_key'), $cfg('my_server_cert'))
 ```
+Your Configuration Map would look like:
+
+![image](https://user-images.githubusercontent.com/44065187/198896274-52cec159-08fc-4a19-a18b-7b7b88653e0d.png)
+
+
 Note the endpoint sending to your listener should be sending to ```http://<mirtth-ip>:8043``` in the above example, and the mirth chnannel should be listening on ```9043```
 
 
