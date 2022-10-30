@@ -8,7 +8,7 @@ Prerequsities:
 
 - Import https://github.com/nextgenhealthcare/connect-examples/tree/master/Code%20Templates/Execute%20Runtime%20Command from Mirth's repo.
 - stunnel installed on your linux host, ideally in the path of the mirth server process owner.  If not you will need to edit a code template.
-- A private key and server certificate as seperate files at a minimum. (2 files)
+- A private key and server certificate as seperate files at a minimum. (2 files) or the next bullet.
 - A private key and server certificate w/CA or CA chain appended (still 2 files, one has the private key, the other has the server cert and the CA chain).
 - import the code template library.
 
