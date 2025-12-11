@@ -1,5 +1,7 @@
 # Mirth Code Template Library for on-the-fly TLS offloading using stunnel
 
+# UPDATE: 2025-12-11 - The Open Integration Engine Project is releasing a free open source TLS plugin, ETA two weeks
+
 ### Purpose: For users without the TLS plugin, this code template library uses stunnel to enable in and outbound TLS connections.  It is an attempt to ease the configuration of stunnel and do it on the fly.
 
 For Linux only!
