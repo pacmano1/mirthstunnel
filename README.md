@@ -1,6 +1,17 @@
-# Mirth Code Template Library for on-the-fly TLS offloading using stunnel
+# [DEPRECATED] Mirth Code Template Library for on-the-fly TLS offloading using stunnel
 
-# UPDATE: 2025-12-11 - The Open Integration Engine Project is releasing a free open source TLS plugin, ETA two weeks
+## This project has been superseded by a free, open-source TLS plugin for NextGen Connect / Mirth Connect.
+
+### Please use the [TLS Manager Plugin](https://github.com/NovaMap-Health/tls-manager-plugin) instead.
+
+The TLS Manager Plugin, jointly sponsored by NovaMap Health Limited & Diridium Technologies Inc. and donated to the Open Integration Engine initiative, provides native TLS support directly within Mirth Connect — no stunnel or OS-level workarounds required.
+
+---
+
+This repository is archived and no longer maintained. The code and documentation below are preserved for historical reference only.
+
+<details>
+<summary>Original README (click to expand)</summary>
 
 ### Purpose: For users without the TLS plugin, this code template library uses stunnel to enable in and outbound TLS connections.  It is an attempt to ease the configuration of stunnel and do it on the fly.
 
@@ -54,7 +65,7 @@ Note your mirth sender should be sending to ```http://localhost:10043``` in the 
 
 
 
-# Limitations
+### Limitations
 
 - There is no checking for avaiable ports.
 - There is no checking for valid private keys and certificates. stunnel will fail on some but not all errors if these are not correct.
@@ -62,14 +73,7 @@ Note your mirth sender should be sending to ```http://localhost:10043``` in the 
 - If you have cron jobs that cleanup /tmp and the jobs are rather dumb about it they may delete the temp dirs the code templates create. You can always modify the templates to write to a directory structure that the mirth server process owner has control.
 - Client certificates (mutual TLS) are not supported.
 
-# Todo
-- use tmpfs?
-- support client certs
-- move temp dirs to appdata?
-- Mixing $g and $gc too much, clean it up
-- Add CA collection option to then enable more strict checks for senders.
-
-# FAQ
+### FAQ
 
 *Why do this per chnanel?*
 
@@ -87,4 +91,6 @@ Typically ```/var/log/stunnel4``` but consult your linux distribution version of
 - Login into your server hosting mirth.
 - kill all stunnel processes that have a uid in their process name.
 - Remove all directores in ```/tmp``` with a UID as their name and contain a file named "stunnel.conf", e.g. ```rm -rf $(find /tmp -name stunnel.conf -execdir pwd \;)```
+
+</details>
 
